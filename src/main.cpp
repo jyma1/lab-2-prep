@@ -32,6 +32,12 @@ const float TUBE_SPEED = 3.0f;
 // In an engine, you'd probably want to make this more flexible than what we have here
 //  (e.g., by setting up a mapping from resourceName->resource which can be modified at runtime).
 // Since our lab is simple, we'll just hardcode it:
+
+const float SIZE = 15.0f;
+const sf::Vector2f INITIAL_POSITION{100.0f, 400.0f};
+const sf::Color COLOR = sf::Color::Yellow;
+
+
 struct ResourceManager {
     std::unique_ptr<sf::SoundBuffer> jumpSoundBuffer;
     std::unique_ptr<sf::Sound> jumpSound;
@@ -67,19 +73,24 @@ struct TubePair {
 bool isTubeOffScreen(const TubePair& tube) { return tube.isOffScreen(); }
 
 struct BirdState {
-    BirdState() : velocityY{INITIAL_BIRD_VELOCITY_Y} {
+    BirdState() : shape{SIZE}, velocityY{INITIAL_BIRD_VELOCITY_Y} {
+
+        shape.SetFillColor(COLOR);
+        shape.SetInitialPosition(INITIAL_POSITION);
         // ====== ====== ======
         // TODO: (Q1)
         //  - initialize the bird's shape (see below) to have
         //    appropriate size, color, and initial position.
         //  Note: consider using member initializer list to set the radius via ctor call.
         // ====== ====== ======
+        
     }
 
     // ====== ====== ======
     // TODO: (Q1)
     //  - add a field for the bird's shape.
     // ====== ====== ======
+    sf::CircleShape shape;
     float velocityY;
 };
 
@@ -113,6 +124,7 @@ private:
     void applyPhysicsToBird() {
         // Apply gravity to bird
         bird.velocityY += GRAVITY;
+        
 
         // ====== ====== ======
         // TODO: (Q3)
@@ -187,6 +199,12 @@ void handleInput(sf::Window& window, GameState& gameState, const ResourceManager
         // TODO: (Q2)
         //  implement jump logic (the key press should be space) and play jump sound fx
         // ====== ====== ======
+        if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+            if (keyPressed->scancode == sf::Keyboard::Scan::Space) {
+                gameState.bird.velocityY = JUMP_SPEED;
+                resources.jumpSound->play();
+            }
+        }
     }
 }
 
@@ -232,6 +250,10 @@ int main() {
         //            std::cout << "value is " << *intPtr << '\n';
         //            std::cout << "raw address is " << intPtr.get() << '\n';
         // ====== ====== ======
+        resources.jumpSoundBuffer.reset(new sf::SoundBuffer());
+        if (!resources.jumpSoundBuffer->loadFromFile("assets/jump.wav")) {
+            std::cerr << "Warning: Could not load jump.wav\n" << std::endl;
+        }
 
         bool shouldQuit = false;
         // Main game loop
