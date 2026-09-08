@@ -74,16 +74,14 @@ bool isTubeOffScreen(const TubePair& tube) { return tube.isOffScreen(); }
 
 struct BirdState {
     BirdState() : shape{SIZE}, velocityY{INITIAL_BIRD_VELOCITY_Y} {
-
-        shape.SetFillColor(COLOR);
-        shape.SetInitialPosition(INITIAL_POSITION);
         // ====== ====== ======
         // TODO: (Q1)
         //  - initialize the bird's shape (see below) to have
         //    appropriate size, color, and initial position.
         //  Note: consider using member initializer list to set the radius via ctor call.
         // ====== ====== ======
-        
+        shape.setFillColor(COLOR);
+        shape.setPosition(INITIAL_POSITION);
     }
 
     // ====== ====== ======
@@ -124,7 +122,7 @@ private:
     void applyPhysicsToBird() {
         // Apply gravity to bird
         bird.velocityY += GRAVITY;
-        
+
 
         // ====== ====== ======
         // TODO: (Q3)
@@ -134,12 +132,23 @@ private:
         //  - Note: bird's x-coordinate will alway be exactly 100.f
         // ====== ====== ======
 
+        sf::Vector2f currentPosition = bird.shape.getPosition();
+        currentPosition.y += bird.velocityY;
+        bird.shape.setPosition(currentPosition);
+
         // ====== ====== ======
         // TODO: (Q3)
         //  - Check if the bird has exceeded the bounds of the screen
         //    (i.e., if it's no longer visible). If not, game should reset by clearing
         //    the tubes and restarting the game (setting the bird back to original initial position)
         // ====== ====== ======
+
+
+        if (currentPosition.y < 0 || currentPosition.y > WINDOW_HEIGHT) {
+            resetTubes();
+            bird.shape.setPosition(INITIAL_POSITION);
+            bird.velocityY = INITIAL_BIRD_VELOCITY_Y;
+        }
     }
 
     void updateTubes() {
@@ -171,12 +180,21 @@ private:
         //  with another
         // ====== ====== ======
 
+
+        for (const auto& tube : tubes) {
+            if (bird.shape.getGlobalBounds().findIntersection(tube.topTube.getGlobalBounds()) || bird.shape.getGlobalBounds().findIntersection(tube.bottomTube.getGlobalBounds())){
         // ====== ====== ======
         // TODO: (Q4)
         //  If bird hits tube, game should reset by resetting the tubes and resetting the bird
         //  to its initial state (i.e., restarting the game)
         // ====== ====== ======
+            resetTubes();
+            bird.shape.setPosition(INITIAL_POSITION);
+            bird.velocityY = INITIAL_BIRD_VELOCITY_Y;
+            }
+        }
     }
+    
 
 public:
     // game world objects
@@ -219,6 +237,7 @@ void render(sf::RenderWindow& window, const GameState& gameState) {
     // ====== ====== ======
     // TODO: (Q1) Draw bird
     // ====== ====== ======
+    window.draw(gameState.bird.shape);
     window.display();
 }
 
@@ -254,6 +273,7 @@ int main() {
         if (!resources.jumpSoundBuffer->loadFromFile("assets/jump.wav")) {
             std::cerr << "Warning: Could not load jump.wav\n" << std::endl;
         }
+        resources.jumpSound.reset(new sf::Sound(*resources.jumpSoundBuffer));
 
         bool shouldQuit = false;
         // Main game loop
